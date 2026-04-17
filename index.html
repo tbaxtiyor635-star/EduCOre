@@ -1,72 +1,190 @@
 <!DOCTYPE html>
 <html lang="uz">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduCore - Kirish</title>
+    <title>EduCore - Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
 
-    <div id="login-section" class="bg-white p-8 rounded-lg shadow-md w-96">
-        <h1 class="text-2xl font-bold text-center text-blue-600 mb-6">EduCore</h1>
-        <div class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium">Login</label>
-                <input type="text" id="username" class="w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-blue-500 outline-none">
-            </div>
-            <div>
-                <label class="block text-sm font-medium">Parol</label>
-                <input type="password" id="password" class="w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-blue-500 outline-none">
-            </div>
-            <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Kirish</button>
+<body class="bg-gray-100 min-h-screen">
+
+    <div id="login-section" class="flex items-center justify-center h-screen">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-96 border-t-4 border-blue-600">
+            <h1 class="text-3xl font-bold text-center text-blue-600 mb-6 italic">EduCore</h1>
+            <input type="text" id="email" placeholder="Email (yoki admin)"
+                class="w-full p-3 border rounded mb-4 outline-none focus:ring-2 focus:ring-blue-400">
+            <input type="password" id="password" placeholder="Parol"
+                class="w-full p-3 border rounded mb-6 outline-none focus:ring-2 focus:ring-blue-400">
+            <button onclick="login()"
+                class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 shadow-md transition">Kirish</button>
         </div>
     </div>
 
-    <div id="dashboard" class="hidden w-full h-full flex">
-        <div class="w-64 bg-slate-800 text-white p-5 space-y-6">
-            <h2 class="text-xl font-bold border-b border-gray-600 pb-2">EduCore Admin</h2>
-            <nav class="space-y-2">
-                <a href="#" class="block p-2 hover:bg-slate-700 rounded">Guruhlar</a>
-                <a href="#" class="block p-2 hover:bg-slate-700 rounded">O'quvchilar</a>
-                <a href="#" class="block p-2 hover:bg-slate-700 rounded">Davomat</a>
-                <a href="#" class="block p-2 hover:bg-slate-700 rounded" onclick="exportData()">Export (Excel)</a>
+    <div id="dashboard" class="hidden flex h-screen">
+        <div class="w-64 bg-slate-900 text-gray-300 flex flex-col">
+            <div class="p-6 text-2xl font-bold text-white border-b border-gray-700">EduCore</div>
+            <nav class="flex-1 p-4 space-y-2">
+                <button onclick="showSection('students')"
+                    class="w-full text-left p-3 rounded hover:bg-slate-800 hover:text-white transition">O'quvchilar</button>
+                <button onclick="showSection('groups')"
+                    class="w-full text-left p-3 rounded hover:bg-slate-800 hover:text-white transition">Guruhlar</button>
+                <button onclick="exportToCSV()"
+                    class="w-full text-left p-3 rounded text-green-400 hover:bg-slate-800 transition">Export CSV</button>
             </nav>
+            <button onclick="location.reload()"
+                class="p-4 text-sm text-red-400 border-t border-gray-700 hover:bg-red-900 hover:text-white transition text-left">Chiqish</button>
         </div>
-        
-        <div class="flex-1 p-10 overflow-y-auto">
-            <h2 class="text-2xl font-semibold mb-4">Markaz Statistikasi</h2>
-            <div class="grid grid-cols-3 gap-4">
-                <div class="bg-blue-500 text-white p-6 rounded shadow">O'quvchilar: 120 ta</div>
-                <div class="bg-green-500 text-white p-6 rounded shadow">Guruhlar: 12 ta</div>
-                <div class="bg-red-500 text-white p-6 rounded shadow">Qarzdorlar: 5 ta</div>
+
+        <div class="flex-1 overflow-y-auto p-8">
+            <div class="flex justify-between items-center mb-8">
+                <h2 id="section-title" class="text-3xl font-bold text-slate-800">O'quvchilar Ro'yxati</h2>
+                <button onclick="openModal()"
+                    class="bg-blue-600 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-700">+ Yangi qo'shish</button>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden border">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="p-4 font-semibold text-gray-600">Ism Familiya</th>
+                            <th class="p-4 font-semibold text-gray-600">Guruh</th>
+                            <th class="p-4 font-semibold text-gray-600">Tel</th>
+                            <th class="p-4 font-semibold text-gray-600">Balans</th>
+                            <th class="p-4 font-semibold text-gray-600">Amallar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-table-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="student-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl p-8 w-full max-w-md shadow-2xl">
+            <h3 class="text-2xl font-bold mb-6 text-slate-800 text-center">Yangi o'quvchi</h3>
+            <div class="space-y-4">
+                <input type="text" id="new-name" placeholder="Ism Familiya"
+                    class="w-full p-3 border rounded-lg outline-none">
+                <input type="text" id="new-group" placeholder="Guruh nomi"
+                    class="w-full p-3 border rounded-lg outline-none">
+                <input type="text" id="new-phone" placeholder="Telefon (998...)"
+                    class="w-full p-3 border rounded-lg outline-none">
+                <input type="number" id="new-balance" placeholder="To'lov summasi"
+                    class="w-full p-3 border rounded-lg outline-none">
+                <div class="flex gap-4 mt-6">
+                    <button onclick="closeModal()" class="flex-1 py-2 text-gray-500 hover:bg-gray-100 rounded-lg">Bekor qilish</button>
+                    <button onclick="saveStudent()"
+                        class="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold">Saqlash</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        function handleLogin() {
-            // Oddiy tekshiruv (Haqiqiy loyihada backendga ulanadi)
-            const user = document.getElementById('username').value;
+        // 1. SUPABASE SOZLAMALARI
+        const SUPABASE_URL = 'https://SIZNING_URL.supabase.co';
+        const SUPABASE_KEY = 'SIZNING_ANON_KEYINGIZ';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 2. LOGIN
+        async function login() {
+            const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
 
-            if(user === "admin" && pass === "123") {
+            if (email === "admin" && pass === "123") {
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
+                fetchStudents();
             } else {
-                alert("Login yoki parol xato!");
+                alert("Xato! Login: admin, Parol: 123");
             }
         }
 
-        function exportData() {
-            let data = "Guruh nomi, O'quvchi, To'lov\nGeneral English, Ali Valiyev, 500000";
-            let blob = new Blob([data], { type: "text/csv" });
-            let url = window.URL.createObjectURL(blob);
-            let a = document.createElement("a");
-            a.href = url;
-            a.download = "EduCore_Export.csv";
-            a.click();
+        // 3. MA'LUMOTLARNI OLISH
+        async function fetchStudents() {
+            const { data, error } = await _supabase
+                .from('students')
+                .select('*')
+                .order('id', { ascending: false });
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            const tbody = document.getElementById('student-table-body');
+            tbody.innerHTML = '';
+
+            data.forEach(student => {
+                tbody.innerHTML += `
+                <tr class="border-b hover:bg-gray-50 transition">
+                    <td class="p-4 font-medium text-slate-700">${student.full_name}</td>
+                    <td class="p-4 text-slate-600">${student.group_name || "Noma'lum"}</td>
+                    <td class="p-4 text-slate-600">${student.phone || '-'}</td>
+                    <td class="p-4 font-bold ${student.balance > 0 ? 'text-green-600' : 'text-red-600'}">${student.balance ? student.balance.toLocaleString() : 0} so'm</td>
+                    <td class="p-4">
+                        <button onclick="deleteStudent(${student.id})" class="text-red-500 hover:underline">O'chirish</button>
+                    </td>
+                </tr>`;
+            });
+        } // <--- MANA SHU QAVS TUSHIB QOLGAN EDI
+
+        // 4. QO'SHISH
+        async function saveStudent() {
+            const name = document.getElementById('new-name').value;
+            const group = document.getElementById('new-group').value;
+            const phone = document.getElementById('new-phone').value;
+            const balance = document.getElementById('new-balance').value;
+
+            const { error } = await _supabase
+                .from('students')
+                .insert([{ full_name: name, group_name: group, phone: phone, balance: parseInt(balance) }]);
+
+            if (error) {
+                alert("Xatolik bo'ldi: " + error.message);
+            } else {
+                closeModal();
+                fetchStudents();
+                document.getElementById('new-name').value = '';
+                document.getElementById('new-group').value = '';
+                document.getElementById('new-phone').value = '';
+                document.getElementById('new-balance').value = '';
+            }
+        }
+
+        // 5. O'CHIRISH
+        async function deleteStudent(id) {
+            if(confirm("Haqiqatan ham o'chirmoqchimisiz?")) {
+                const { error } = await _supabase.from('students').delete().eq('id', id);
+                if (!error) fetchStudents();
+            }
+        }
+
+        // 6. EXPORT
+        async function exportToCSV() {
+            const { data } = await _supabase.from('students').select('*');
+            let csvContent = "data:text/csv;charset=utf-8,Ism,Guruh,Tel,Balans\n";
+            data.forEach(s => {
+                csvContent += `${s.full_name},${s.group_name},${s.phone},${s.balance}\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "EduCore_Students.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
+
+        function openModal() { document.getElementById('student-modal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('student-modal').classList.add('hidden'); }
+        function showSection(name) {
+            document.getElementById('section-title').innerText = name === 'students' ? "O'quvchilar Ro'yxati" : "Guruhlar Bo'limi";
         }
     </script>
 </body>
+
 </html>
