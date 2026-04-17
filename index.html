@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduCore - Kirish</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+
+    <div id="login-section" class="bg-white p-8 rounded-lg shadow-md w-96">
+        <h1 class="text-2xl font-bold text-center text-blue-600 mb-6">EduCore</h1>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium">Login</label>
+                <input type="text" id="username" class="w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Parol</label>
+                <input type="password" id="password" class="w-full p-2 border rounded mt-1 focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <button onclick="handleLogin()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Kirish</button>
+        </div>
+    </div>
+
+    <div id="dashboard" class="hidden w-full h-full flex">
+        <div class="w-64 bg-slate-800 text-white p-5 space-y-6">
+            <h2 class="text-xl font-bold border-b border-gray-600 pb-2">EduCore Admin</h2>
+            <nav class="space-y-2">
+                <a href="#" class="block p-2 hover:bg-slate-700 rounded">Guruhlar</a>
+                <a href="#" class="block p-2 hover:bg-slate-700 rounded">O'quvchilar</a>
+                <a href="#" class="block p-2 hover:bg-slate-700 rounded">Davomat</a>
+                <a href="#" class="block p-2 hover:bg-slate-700 rounded" onclick="exportData()">Export (Excel)</a>
+            </nav>
+        </div>
+        
+        <div class="flex-1 p-10 overflow-y-auto">
+            <h2 class="text-2xl font-semibold mb-4">Markaz Statistikasi</h2>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-blue-500 text-white p-6 rounded shadow">O'quvchilar: 120 ta</div>
+                <div class="bg-green-500 text-white p-6 rounded shadow">Guruhlar: 12 ta</div>
+                <div class="bg-red-500 text-white p-6 rounded shadow">Qarzdorlar: 5 ta</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleLogin() {
+            // Oddiy tekshiruv (Haqiqiy loyihada backendga ulanadi)
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+
+            if(user === "admin" && pass === "123") {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+            } else {
+                alert("Login yoki parol xato!");
+            }
+        }
+
+        function exportData() {
+            let data = "Guruh nomi, O'quvchi, To'lov\nGeneral English, Ali Valiyev, 500000";
+            let blob = new Blob([data], { type: "text/csv" });
+            let url = window.URL.createObjectURL(blob);
+            let a = document.createElement("a");
+            a.href = url;
+            a.download = "EduCore_Export.csv";
+            a.click();
+        }
+    </script>
+</body>
+</html>
